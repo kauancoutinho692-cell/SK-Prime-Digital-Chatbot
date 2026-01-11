@@ -6,12 +6,12 @@ const app = express();
 app.use(express.json());
 
 // ================= CONFIGURAÇÕES =================
-const OPENAI_KEY = process.env.OPENAI_KEY;
+const OPENAI_KEY = process.env.OPENAI_KEY; // coloque no Render
 const LINK_VENDA = "https://skprimedigi-jwmoqaeu.manus.space";
 const PORT = process.env.PORT || 3000;
 
 if (!OPENAI_KEY) {
-  console.error("❌ ERRO: OPENAI_KEY não configurada");
+  console.error("ERRO: OPENAI_KEY não configurada");
   process.exit(1);
 }
 
@@ -25,7 +25,7 @@ function saveDB() {
   fs.writeFileSync(DB_FILE, JSON.stringify(users, null, 2));
 }
 
-// ================= FUNÇÕES ÚTEIS =================
+// ================= FUNÇÕES =================
 const delay = ms => new Promise(r => setTimeout(r, ms));
 
 async function humanDelay() {
@@ -38,7 +38,7 @@ function classify(msg = "") {
   if (/(comprei|paguei|pix)/.test(m)) return "compra";
   if (/(vou pensar|depois|agora não)/.test(m)) return "saida";
   if (/(preço|valor|quanto)/.test(m)) return "interesse";
-  if (/(funciona|golpe|confiável)/.test(m)) return "objeção";
+  if (/(funciona|golpe|confiável)/.test(m)) return "objecao";
   return "normal";
 }
 
@@ -47,7 +47,7 @@ function buildPrompt(message) {
   return `
 Você é um humano real conversando no WhatsApp ou Instagram.
 Nunca diga que é IA.
-Fale simples, curto e natural.
+Fale curto, simples e natural.
 
 Produtos:
 - Produto 1: de R$15 por R$5,99
@@ -67,19 +67,13 @@ ${LINK_VENDA}
 `;
 }
 
-// ================= ROTA PRINCIPAL =================
+// ================= ROTA =================
 app.post("/chat", async (req, res) => {
   try {
-    if (!req.body || !req.body.userId || !req.body.message) {
-      return res.status(400).json({ reply: "Mensagem inválida." });
-    }
+    const { userId = "anonimo", message = "" } = req.body || {};
 
-    const { userId, message } = req.body;
-
-    if (message.length > 500) {
-      return res.json({
-        reply: "Mensagem muito longa 😅 pode resumir?"
-      });
+    if (!message) {
+      return res.json({ reply: "Pode me explicar melhor? 🙂" });
     }
 
     if (!users[userId]) {
@@ -113,8 +107,8 @@ ${LINK_VENDA}`
       "https://api.openai.com/v1/chat/completions",
       {
         model: "gpt-4o-mini",
-        max_tokens: 200,
         temperature: 0.7,
+        max_tokens: 200,
         messages: [
           { role: "system", content: buildPrompt(message) },
           { role: "user", content: message }
@@ -147,7 +141,7 @@ ${LINK_VENDA}`
   }
 });
 
-// ================= INICIAR SERVIDOR =================
+// ================= START =================
 app.listen(PORT, () => {
-  console.log(`✅ Chatbot ativo na porta ${PORT}`);
+  console.log(`Chatbot rodando na porta ${PORT}`);
 });
